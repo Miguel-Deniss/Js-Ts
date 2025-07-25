@@ -6,5 +6,5 @@ múltiplas
 linhas
 */
 
-// console.log('Miguel'
+console.log('Miguel')
 //Tudo que fica na frente da barra é um comentário e é ignorado pelo JavaScript
