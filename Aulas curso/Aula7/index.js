@@ -20,5 +20,5 @@ const resultado = 20 * 20;
 const segundoResultado = resultado * resultado;
 console.log(segundoResultado);
 
-//typeof = tipo
+//typeof = tipo de dado
 console.log(typeof(primeiroNumero));
