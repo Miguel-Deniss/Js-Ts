@@ -7,9 +7,14 @@ Operadores Aritméticos
 
 Incremento = ++
 Decremento = --
+
+NaN = Not a Number
+parseInt (Inteiro)
+parseFloat (Decimais)
 */
 
 // Variaveis
+let nome = "Miguel";
 let num1;
 let num2;
 let num3;
@@ -63,4 +68,8 @@ console.log(contador++ * 10) // Contador + 1 * 10 = 30
 contador= 3;
 contador--; // Diminui 1
 console.log(contador-- * 10) // Contador - 1 * 10 = 20
+
+console.log(typeof(contador));
+console.log(typeof(nome));
+
 
