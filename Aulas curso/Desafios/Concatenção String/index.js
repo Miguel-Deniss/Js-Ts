@@ -1,3 +1,4 @@
+// Concatenação de strings
 const nome = "Miguel";
 const idade = 16;
 const cidade = "Brotas";
