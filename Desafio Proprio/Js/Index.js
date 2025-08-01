@@ -2,6 +2,6 @@
 let nomeUsuario;
 let idadeUsuario;
 let nomeAmigo;
-let idadeUser2;
+let idadeAmigo;
 
 console.log(prompt());
