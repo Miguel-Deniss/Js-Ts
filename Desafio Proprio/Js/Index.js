@@ -1,6 +1,6 @@
 // Desafio Proprio
-let nomeUser1;
-let idadeUser1;
+let nomeUsuario;
+let idade;
 let nomeUser2;
 let idadeUser2;
 
