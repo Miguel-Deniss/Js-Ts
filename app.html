@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Productivity Suite - Demo</title>
+<style>
+  :root{
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #222;
+    --muted: #666;
+    --accent: #4f46e5;
+    --danger: #ef4444;
+    --success: #10b981;
+  }
+  [data-theme="dark"]{
+    --bg:#0b1020; --card:#071028; --text:#e6eef8; --muted:#9fb0d2; --accent:#7c3aed;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    margin:0; background:linear-gradient(180deg, var(--bg), #fff); color:var(--text);
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:transparent;
+  }
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+  h1{font-size:18px;margin:0}
+  .controls{display:flex;gap:10px;align-items:center}
+  button, .btn {
+    border:0;background:var(--card);padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,0.06)
+  }
+  .btn:active{transform:translateY(1px)}
+  main{padding:18px;display:grid;grid-template-columns:320px 1fr 360px;gap:18px;align-items:start}
+  .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 4px 20px rgba(2,6,23,0.06)}
+  .sidebar .section{margin-bottom:12px}
+  .new-task{display:flex;gap:8px;margin-bottom:10px}
+  input[type="text"], textarea, select, input[type="date"], input[type="time"]{
+    width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef8;background:transparent;color:var(--text)
+  }
+  .list{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;padding-right:4px}
+  .task{
+    display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;border:1px dashed rgba(0,0,0,0.03);background:linear-gradient(180deg, rgba(255,255,255,0.6), transparent)
+  }
+  .tag{padding:4px 8px;border-radius:6px;font-size:12px}
+  .muted{color:var(--muted);font-size:13px}
+  .kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .column{min-height:200px;padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent)}
+  .note{white-space:pre-wrap;padding:8px;border-radius:8px;border-left:4px solid rgba(0,0,0,0.03)}
+  .toolbar{display:flex;gap:8px;align-items:center}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat{padding:10px;border-radius:8px}
+  footer{padding:12px;text-align:center;color:var(--muted);font-size:13px}
+  .kbd{border:1px solid rgba(0,0,0,0.06);padding:4px 6px;border-radius:6px;background:transparent;font-family:monospace;font-size:12px}
+  .search{display:flex;gap:8px;align-items:center}
+  .flex{display:flex;gap:8px;align-items:center}
+  .grow{flex:1}
+  .hidden{display:none}
+  .small{font-size:13px}
+  .danger{color:var(--danger)}
+  .success{color:var(--success)}
+  .center{display:flex;justify-content:center;align-items:center}
+  .drag-handle{cursor:grab;padding:6px;border-radius:6px}
+  .import-area{width:100%;height:120px;padding:8px;border-radius:8px;border:1px dashed rgba(0,0,0,0.06);resize:vertical}
+  /* responsiveness */
+  @media (max-width:1100px){main{grid-template-columns:1fr;}}
+</style>
+</head>
+<body data-theme="light">
+<header>
+  <div class="brand">
+    <div class="logo">PS</div>
+    <div>
+      <h1>Productivity Suite — Demo</h1>
+      <div class="muted small">To-do • Kanban • Notas • Estatísticas • Persistência</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="search">
+      <input id="globalSearch" placeholder="Buscar tarefas, notas ou tags..." />
+      <button id="clearSearch" class="btn">Limpar</button>
+    </div>
+    <button id="toggleTheme" class="btn">Tema</button>
+    <div class="toolbar">
+      <button id="undoBtn" class="btn" title="Desfazer (Ctrl+Z)">↶</button>
+      <button id="redoBtn" class="btn" title="Refazer (Ctrl+Y)">↷</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Sidebar -->
+  <aside class="panel sidebar">
+    <div class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Adicionar tarefa</strong>
+        <small class="muted">enter para criar</small>
+      </div>
+      <div class="new-task">
+        <input id="taskTitle" type="text" placeholder="Título da tarefa" />
+        <button id="addTaskBtn" class="btn">➕</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="taskDue" type="date" />
+        <select id="taskPriority">
+          <option value="low">Baixa</option>
+          <option value="medium" selected>Média</option>
+          <option value="high">Alta</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <strong>Filtrar</strong>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+        <select id="filterStatus">
+          <option value="all">Todas</option>
+          <option value="todo">A fazer</option>
+          <option value="inprogress">Em progresso</option>
+          <option value="done">Concluídas</option>
+        </select>
+        <select id="filterPriority">
+          <option value="all">Todas prioridades</option>
+          <option value="low">Baixa</option>
+          <option value="medium">Média</option>
+          <option value="high">Alta</option>
+        </select>
+        <input id="filterTag" placeholder="Tag (ex: trabalho)" />
+        <button id="applyFilters" class="btn">Aplicar</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <strong>Import / Export</strong>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+        <textarea id="importArea" class="import-area" placeholder='Cole JSON aqui para importar'></textarea>
+        <div style="display:flex;gap:8px">
+          <button id="importBtn" class="btn">Importar</button>
+          <button id="exportBtn" class="btn">Exportar</button>
+          <button id="resetBtn" class="btn danger">Resetar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <strong>Gerador Demonstrativo</strong>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button id="mockSmall" class="btn">5 itens</button>
+        <button id="mockBig" class="btn">50 itens</button>
+      </div>
+    </div>
+
+    <footer>
+      <div class="muted">Atalhos: <span class="kbd">Ctrl+N</span> nova nota · <span class="kbd">Ctrl+K</span> foco kanban</div>
+    </footer>
+  </aside>
+
+  <!-- Main canvas -->
+  <section class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <strong>Painel</strong>
+        <div class="muted small">Visão geral das tarefas e notas</div>
+      </div>
+      <div class="flex">
+        <select id="viewMode">
+          <option value="list">Lista</option>
+          <option value="kanban" selected>Kanban</option>
+          <option value="notes">Notas</option>
+          <option value="calendar">Calendário</option>
+          <option value="stats">Estatísticas</option>
+        </select>
+        <button id="newNoteBtn" class="btn">Nova nota</button>
+      </div>
+    </div>
+
+    <div id="canvasArea">
+      <!-- Kanban view by default -->
+      <div id="kanbanView" class="kanban">
+        <div class="column panel" data-col="todo">
+          <h3>A fazer</h3>
+          <div class="list" id="col-todo"></div>
+        </div>
+        <div class="column panel" data-col="inprogress">
+          <h3>Em progresso</h3>
+          <div class="list" id="col-inprogress"></div>
+        </div>
+        <div class="column panel" data-col="done">
+          <h3>Concluídas</h3>
+          <div class="list" id="col-done"></div>
+        </div>
+      </div>
+
+      <div id="listView" class="hidden">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <button id="sortOld" class="btn">Mais antigas</button>
+          <button id="sortNew" class="btn">Mais novas</button>
+          <button id="sortDue" class="btn">Por vencimento</button>
+        </div>
+        <div class="list" id="taskList"></div>
+      </div>
+
+      <div id="notesView" class="hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong>Notas</strong>
+          <div class="muted small">Ctrl+N para nova nota</div>
+        </div>
+        <div id="notesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px"></div>
+      </div>
+
+      <div id="calendarView" class="hidden">
+        <strong>Calendário simples</strong>
+        <div class="muted small" style="margin-bottom:8px">Clique em uma data para ver tarefas</div>
+        <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+        <div id="calendarTasks" style="margin-top:10px"></div>
+      </div>
+
+      <div id="statsView" class="hidden">
+        <strong>Estatísticas</strong>
+        <div style="margin-top:8px" id="statsContent"></div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- Right column -->
+  <aside class="panel rightcol">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <strong>Detalhes</strong>
+      <div id="selectedCount" class="muted small">Selecionados: 0</div>
+    </div>
+
+    <div id="details" class="muted small">Selecione uma tarefa para ver detalhes.</div>
+
+    <div style="margin-top:12px">
+      <strong>Busca rápida</strong>
+      <div style="margin-top:8px" class="search">
+        <input id="quickTag" placeholder="buscar por tag..." />
+        <button id="tagSearchBtn" class="btn">Ir</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <strong>Atividades recentes</strong>
+      <ul id="activityLog" style="margin-top:8px"></ul>
+    </div>
+  </aside>
+</main>
+
+<!-- Templates & Modals (simple) -->
+<template id="taskTpl">
+  <div class="task" draggable="true">
+    <div class="drag-handle">☰</div>
+    <div style="flex:1">
+      <div><strong class="task-title"></strong> <span class="muted small task-meta"></span></div>
+      <div class="muted small task-desc"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <div class="tag task-priority small"></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn editBtn small">✎</button>
+        <button class="btn deleteBtn small">🗑</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+/*
+  Productivity Suite - single-file demo
+  - Data model: tasks, notes, activity log
+  - Persistence: localStorage
+  - Views: kanban, list, notes, calendar, stats
+  - Features: import/export, mock data, undo/redo, filters, keyboard shortcuts
+*/
+
+// ---------- Utilities ----------
+const uid = (prefix='id') => prefix + '_' + Math.random().toString(36).slice(2,9);
+const nowISO = ()=> new Date().toISOString();
+const fmtDate = (iso)=> iso ? new Date(iso).toLocaleString() : '';
+const clamp = (n,min,max)=> Math.max(min,Math.min(max,n));
+
+function humanPriority(p){
+  if(p==='high') return '🔴 Alta';
+  if(p==='medium') return '🟠 Média';
+  return '🟢 Baixa';
+}
+function colorForPriority(p){
+  if(p==='high') return 'var(--danger)';
+  if(p==='medium') return 'var(--accent)';
+  return 'var(--success)';
+}
+
+// ---------- App State ----------
+const App = {
+  state: {
+    tasks: [], // {id,title,desc,status:todo|inprogress|done,priority,due,tags:[],created,updated}
+    notes: [], // {id,title,content,created,updated}
+    activity: [], // [{time, text}]
+    undoStack: [],
+    redoStack: [],
+    selection: null,
+    settings: {
+      theme: 'light'
+    }
+  },
+  SAVE_KEY: 'prod_suite_v1'
+};
+
+// ---------- Persistence ----------
+function saveState(pushUndo=true){
+  try{
+    const snapshot = JSON.stringify({
+      tasks: App.state.tasks,
+      notes: App.state.notes,
+      activity: App.state.activity,
+      settings: App.state.settings
+    });
+    localStorage.setItem(App.SAVE_KEY, snapshot);
+    if(pushUndo){
+      pushUndoSnapshot(snapshot);
+    }
+    logActivity('Estado salvo');
+    renderAll();
+  }catch(e){
+    console.error('Erro ao salvar:',e);
+  }
+}
+function loadState(){
+  const raw = localStorage.getItem(App.SAVE_KEY);
+  if(!raw) return false;
+  try{
+    const obj = JSON.parse(raw);
+    App.state.tasks = obj.tasks || [];
+    App.state.notes = obj.notes || [];
+    App.state.activity = obj.activity || [];
+    App.state.settings = obj.settings || App.state.settings;
+    renderAll();
+    return true;
+  }catch(e){
+    console.error('Erro ao carregar:', e);
+    return false;
+  }
+}
+function resetState(){
+  if(!confirm('Tem certeza que quer resetar todos os dados?')) return;
+  App.state.tasks = [];
+  App.state.notes = [];
+  App.state.activity = [];
+  App.state.undoStack = [];
+  App.state.redoStack = [];
+  localStorage.removeItem(App.SAVE_KEY);
+  logActivity('Estado resetado');
+  renderAll();
+}
+
+// ---------- Undo/Redo ----------
+function pushUndoSnapshot(snapshotJSON){
+  App.state.undoStack.push(snapshotJSON);
+  if(App.state.undoStack.length > 50) App.state.undoStack.shift();
+  App.state.redoStack = []; // clear redo on new action
+}
+function undo(){
+  if(App.state.undoStack.length < 2) {
+    alert('Nada para desfazer');
+    return;
+  }
+  // current snapshot at top
+  const current = App.state.undoStack.pop();
+  App.state.redoStack.push(current);
+  const previous = App.state.undoStack[App.state.undoStack.length-1];
+  try{
+    const obj = JSON.parse(previous);
+    App.state.tasks = obj.tasks || [];
+    App.state.notes = obj.notes || [];
+    App.state.activity = obj.activity || [];
+    App.state.settings = obj.settings || App.state.settings;
+    saveState(false);
+    logActivity('Desfazer realizado');
+  }catch(e){ console.error('undo failed',e) }
+}
+function redo(){
+  if(App.state.redoStack.length === 0) { alert('Nada para refazer'); return; }
+  const snap = App.state.redoStack.pop();
+  try{
+    const obj = JSON.parse(snap);
+    App.state.tasks = obj.tasks || [];
+    App.state.notes = obj.notes || [];
+    App.state.activity = obj.activity || [];
+    App.state.settings = obj.settings || App.state.settings;
+    saveState(false);
+    logActivity('Refazer realizado');
+  }catch(e){ console.error('redo failed', e) }
+}
+
+// ---------- Activity Log ----------
+function logActivity(text){
+  App.state.activity.unshift({time:nowISO(), text});
+  if(App.state.activity.length>100) App.state.activity.pop();
+  renderActivity();
+}
+
+// ---------- Data operations ----------
+function createTask({title,desc='',priority='medium',due=null,tags=[],status='todo'}){
+  const task = {
+    id: uid('t'), title, desc, priority, due, tags, status, created: nowISO(), updated: nowISO()
+  };
+  App.state.tasks.push(task);
+  saveState(true);
+  logActivity(`Tarefa criada: ${title}`);
+  return task;
+}
+function updateTask(id, patch){
+  const t = App.state.tasks.find(x=>x.id===id);
+  if(!t) return null;
+  Object.assign(t, patch);
+  t.updated = nowISO();
+  saveState(true);
+  logActivity(`Tarefa atualizada: ${t.title}`);
+  return t;
+}
+function deleteTask(id){
+  const idx = App.state.tasks.findIndex(x=>x.id===id);
+  if(idx>=0){
+    const removed = App.state.tasks.splice(idx,1)[0];
+    saveState(true);
+    logActivity(`Tarefa removida: ${removed.title}`);
+    return removed;
+  }
+  return null;
+}
+function createNote({title,content}){
+  const n = {id: uid('n'), title, content, created: nowISO(), updated: nowISO()};
+  App.state.notes.unshift(n);
+  saveState(true);
+  logActivity(`Nota criada: ${title}`);
+  return n;
+}
+function updateNote(id, patch){
+  const n = App.state.notes.find(x=>x.id===id);
+  if(!n) return null;
+  Object.assign(n, patch);
+  n.updated = nowISO();
+  saveState(true);
+  logActivity(`Nota atualizada: ${n.title}`);
+  return n;
+}
+function deleteNote(id){
+  const idx = App.state.notes.findIndex(x=>x.id===id);
+  if(idx>=0){
+    const removed = App.state.notes.splice(idx,1)[0];
+    saveState(true);
+    logActivity(`Nota removida: ${removed.title}`);
+    return removed;
+  }
+  return null;
+}
+
+// ---------- Mock data generator ----------
+function generateMock(n=10){
+  const priorities = ['low','medium','high'];
+  const sampleTags = ['trabalho','pessoal','estudo','urgente','ideia'];
+  const sampleTitles = [
+    'Enviar relatório semanal','Comprar mantimentos','Revisar PR #42','Estudar JS avançado','Planejar viagem',
+    'Pagar conta de luz','Organizar portfólio','Ler artigo técnico','Praticar algoritmos','Criar wireframe'
+  ];
+  for(let i=0;i<n;i++){
+    const title = sampleTitles[i % sampleTitles.length] + (i>0?(' — '+(i+1)):'');
+    const desc = 'Descrição rápida criada automaticamente para demo #' + (i+1);
+    const priority = priorities[Math.floor(Math.random()*priorities.length)];
+    const due = (Math.random()>0.6) ? new Date(Date.now()+ (Math.random()*10|0)*24*3600*1000).toISOString() : null;
+    const tags = [];
+    if(Math.random()>0.5) tags.push(sampleTags[Math.floor(Math.random()*sampleTags.length)]);
+    const status = Math.random()>0.75 ? 'done' : (Math.random()>0.4?'inprogress':'todo');
+    createTask({title,desc,priority,due,tags,status});
+  }
+  // create some notes too
+  for(let j=0;j<Math.max(1, Math.floor(n/5)); j++){
+    createNote({title: 'Nota demo ' + (j+1), content: 'Conteúdo de exemplo da nota ' + (j+1) + '\n\nBullet 1\n- item A\n- item B'});
+  }
+  logActivity(`Gerados ${n} itens de demonstração`);
+}
+
+// ---------- Rendering ----------
+function $(sel){ return document.querySelector(sel) }
+function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
+
+function renderAll(){
+  renderTheme();
+  renderKanban();
+  renderList();
+  renderNotes();
+  renderCalendar();
+  renderStats();
+  renderActivity();
+  renderDetails();
+  updateCounts();
+}
+
+function renderKanban(){
+  const cols = {todo: $('#col-todo'), inprogress: $('#col-inprogress'), done: $('#col-done')};
+  for(const k in cols) cols[k].innerHTML = '';
+  App.state.tasks.forEach(task=>{
+    const el = createTaskElement(task);
+    cols[task.status].appendChild(el);
+  });
+  // wire drag handlers
+  $all('.task').forEach(addDragHandlers);
+}
+function renderList(sort='created_desc'){
+  const list = $('#taskList');
+  list.innerHTML = '';
+  let arr = [...App.state.tasks];
+  if(sort==='created_asc') arr.sort((a,b)=> new Date(a.created) - new Date(b.created));
+  else if(sort==='due') arr.sort((a,b)=> (a.due||'9999') > (b.due||'9999')?1:-1);
+  else arr.sort((a,b)=> new Date(b.created) - new Date(a.created));
+  arr.forEach(task=>{
+    const el = createTaskElement(task);
+    list.appendChild(el);
+  });
+  $all('.task').forEach(addDragHandlers);
+}
+function renderNotes(){
+  const grid = $('#notesGrid');
+  grid.innerHTML = '';
+  App.state.notes.forEach(n=>{
+    const node = document.createElement('div');
+    node.className = 'panel note';
+    node.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><strong>${escapeHtml(n.title)}</strong>
+      <div><button class="btn small editNoteBtn" data-id="${n.id}">✎</button> <button class="btn small deleteNoteBtn" data-id="${n.id}">🗑</button></div></div>
+      <div class="muted small" style="margin-top:6px">${escapeHtml(n.content.slice(0,180))}${n.content.length>180?'...':''}</div>
+      <div class="muted small" style="margin-top:6px">Atualizado: ${fmtDate(n.updated)}</div>`;
+    grid.appendChild(node);
+  });
+  // wire note edit/delete
+  $all('.editNoteBtn').forEach(btn=>{
+    btn.onclick = (e)=> {
+      const id = e.currentTarget.dataset.id;
+      const note = App.state.notes.find(x=>x.id===id);
+      if(!note) return;
+      const newTitle = prompt('Editar título da nota', note.title);
+      if(newTitle===null) return;
+      const newContent = prompt('Editar conteúdo (use \\n para nova linha)', note.content);
+      if(newContent===null) return;
+      updateNote(id, {title:newTitle, content:newContent});
+    };
+  });
+  $all('.deleteNoteBtn').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const id = e.currentTarget.dataset.id;
+      if(confirm('Excluir nota?')) deleteNote(id);
+    };
+  });
+}
+function renderCalendar(){
+  const grid = $('#calendarGrid'), tasksBox = $('#calendarTasks');
+  grid.innerHTML=''; tasksBox.innerHTML='';
+  // show next 28 days
+  const start = new Date();
+  for(let i=0;i<28;i++){
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate()+i);
+    const iso = d.toISOString().slice(0,10);
+    const cell = document.createElement('div');
+    cell.className = 'panel center';
+    cell.style.padding='8px';
+    const dayTasks = App.state.tasks.filter(t=> t.due && t.due.slice(0,10)===iso);
+    cell.innerHTML = `<div style="font-weight:600">${d.toLocaleDateString()}</div>
+      <div class="muted small">${dayTasks.length} tarefas</div>`;
+    cell.onclick = ()=> {
+      tasksBox.innerHTML = `<h4>Tarefas em ${d.toLocaleDateString()}</h4>`;
+      if(dayTasks.length===0) tasksBox.innerHTML += '<div class="muted">Nenhuma tarefa nesta data</div>';
+      dayTasks.forEach(t=>{
+        const li = document.createElement('div');
+        li.className='task';
+        li.style.marginTop='6px';
+        li.innerHTML = `<div style="flex:1"><strong>${escapeHtml(t.title)}</strong><div class="muted small">${t.desc || ''}</div></div>
+          <div class="tag small">${humanPriority(t.priority)}</div>`;
+        tasksBox.appendChild(li);
+      });
+    };
+    grid.appendChild(cell);
+  }
+}
+function renderStats(){
+  const el = $('#statsContent');
+  const total = App.state.tasks.length;
+  const done = App.state.tasks.filter(t=>t.status==='done').length;
+  const inprogress = App.state.tasks.filter(t=>t.status==='inprogress').length;
+  const todo = App.state.tasks.filter(t=>t.status==='todo').length;
+  const byPriority = App.state.tasks.reduce((acc,t)=>{
+    acc[t.priority] = (acc[t.priority]||0)+1; return acc;
+  }, {});
+  el.innerHTML = `<div class="stats">
+    <div class="stat panel"><strong>Total</strong><div class="muted">${total} tarefas</div></div>
+    <div class="stat panel"><strong>Concluídas</strong><div class="muted">${done}</div></div>
+    <div class="stat panel"><strong>Em progresso</strong><div class="muted">${inprogress}</div></div>
+    <div class="stat panel"><strong>A fazer</strong><div class="muted">${todo}</div></div>
+  </div>
+  <div style="margin-top:10px">
+    <strong>Por prioridade</strong>
+    <div class="muted small">Alta: ${byPriority.high||0} • Média: ${byPriority.medium||0} • Baixa: ${byPriority.low||0}</div>
+  </div>`;
+}
+
+function renderActivity(){
+  const ul = $('#activityLog');
+  ul.innerHTML = '';
+  App.state.activity.slice(0,20).forEach(a=>{
+    const li = document.createElement('li');
+    li.textContent = `${new Date(a.time).toLocaleString()} — ${a.text}`;
+    ul.appendChild(li);
+  });
+}
+
+function renderDetails(){
+  const details = $('#details');
+  if(!App.state.selection){ details.innerHTML = '<div class="muted small">Selecione uma tarefa para ver detalhes.</div>'; return; }
+  const t = App.state.tasks.find(x=>x.id===App.state.selection);
+  if(!t){ details.innerHTML = '<div class="muted small">Item selecionado não existe.</div>'; return; }
+  details.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><strong>${escapeHtml(t.title)}</strong>
+    <div class="muted small">${fmtDate(t.updated)}</div></div>
+    <div style="margin-top:8px" class="muted small">${escapeHtml(t.desc || '—')}</div>
+    <div style="margin-top:8px"><strong>Tags</strong><div class="muted small">${(t.tags||[]).join(', ') || 'nenhuma'}</div></div>
+    <div style="margin-top:8px"><strong>Prioridade</strong><div class="muted small">${humanPriority(t.priority)}</div></div>
+    <div style="margin-top:8px"><strong>Vencimento</strong><div class="muted small">${t.due? new Date(t.due).toLocaleString() : '—'}</div></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="detailEditBtn">Editar</button>
+      <button class="btn danger" id="detailDeleteBtn">Excluir</button>
+      <button class="btn" id="detailMoveBtn">Mover status</button>
+    </div>`;
+  // wire
+  $('#detailEditBtn').onclick = ()=>{
+    const newTitle = prompt('Editar título', t.title); if(newTitle===null) return;
+    const newDesc = prompt('Editar descrição', t.desc || ''); if(newDesc===null) return;
+    const newTags = prompt('Tags (separadas por vírgula)', (t.tags||[]).join(','));
+    updateTask(t.id, {title:newTitle, desc:newDesc, tags: newTags ? newTags.split(',').map(s=>s.trim()).filter(Boolean) : []});
+  };
+  $('#detailDeleteBtn').onclick = ()=>{
+    if(confirm('Excluir tarefa "'+t.title+'"?')) { deleteTask(t.id); App.state.selection=null; renderDetails(); }
+  };
+  $('#detailMoveBtn').onclick = ()=>{
+    const order = ['todo','inprogress','done'];
+    const idx = order.indexOf(t.status);
+    const nxt = order[(idx+1)%order.length];
+    updateTask(t.id, {status:nxt});
+  };
+}
+
+function updateCounts(){
+  $('#selectedCount').textContent = 'Selecionados: ' + (App.state.selection ? 1 : 0);
+}
+
+// ---------- Task element factory ----------
+function createTaskElement(task){
+  const tpl = document.getElementById('taskTpl').content.cloneNode(true);
+  const el = tpl.querySelector('.task');
+  el.dataset.id = task.id;
+  tpl.querySelector('.task-title').textContent = task.title;
+  tpl.querySelector('.task-meta').textContent = (task.due ? (' • vence: ' + new Date(task.due).toLocaleDateString()) : '');
+  tpl.querySelector('.task-desc').textContent = task.desc || '';
+  const pr = tpl.querySelector('.task-priority');
+  pr.textContent = humanPriority(task.priority);
+  pr.style.background = 'transparent';
+  pr.style.color = colorForPriority(task.priority);
+  // edit & delete
+  const editBtn = tpl.querySelector('.editBtn');
+  editBtn.onclick = (e)=> {
+    e.stopPropagation();
+    const newTitle = prompt('Editar título', task.title); if(newTitle===null) return;
+    const newDesc = prompt('Editar descrição', task.desc||''); if(newDesc===null) return;
+    const newPriority = prompt('Prioridade (low|medium|high)', task.priority) || task.priority;
+    const newTags = prompt('Tags (vírgula)', (task.tags||[]).join(','));
+    updateTask(task.id, {title:newTitle, desc:newDesc, priority:newPriority, tags: newTags ? newTags.split(',').map(s=>s.trim()).filter(Boolean) : []});
+  };
+  const delBtn = tpl.querySelector('.deleteBtn');
+  delBtn.onclick = (e)=> {
+    e.stopPropagation();
+    if(confirm('Excluir?')) deleteTask(task.id);
+  };
+  el.onclick = ()=> {
+    App.state.selection = task.id;
+    renderDetails();
+  };
+  return el;
+}
+
+// ---------- Drag & Drop for Kanban ----------
+function addDragHandlers(el){
+  el.ondragstart = (ev)=>{
+    ev.dataTransfer.setData('text/plain', el.dataset.id);
+    el.classList.add('dragging');
+  };
+  el.ondragend = (ev)=>{
+    el.classList.remove('dragging');
+  };
+}
+// columns drop
+$all('.column').forEach(col=>{
+  col.addEventListener('dragover', (ev)=> ev.preventDefault());
+  col.addEventListener('drop', (ev)=>{
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData('text/plain');
+    const colName = col.dataset.col;
+    updateTask(id, {status: colName});
+  });
+});
+
+// ---------- Import / Export ----------
+function importFromJSON(text){
+  try{
+    const obj = JSON.parse(text);
+    if(Array.isArray(obj.tasks)) App.state.tasks = obj.tasks;
+    if(Array.isArray(obj.notes)) App.state.notes = obj.notes;
+    if(Array.isArray(obj.activity)) App.state.activity = obj.activity;
+    saveState(true);
+    logActivity('Import realizado');
+    alert('Importação concluída');
+  }catch(e){
+    alert('JSON inválido: ' + e.message);
+  }
+}
+function exportToJSON(){
+  const payload = {tasks: App.state.tasks, notes: App.state.notes, activity: App.state.activity};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'prod_suite_export.json'; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  logActivity('Export realizado');
+}
+
+// ---------- Filters & Search ----------
+function applyFilters(){
+  const status = $('#filterStatus').value;
+  const priority = $('#filterPriority').value;
+  const tag = $('#filterTag').value.trim().toLowerCase();
+  App.state.tasks.forEach(t=>{
+    let pass = true;
+    if(status!=='all' && t.status !== status) pass=false;
+    if(priority!=='all' && t.priority !== priority) pass=false;
+    if(tag){
+      const has = (t.tags||[]).some(tt=>tt.toLowerCase().includes(tag)) || t.title.toLowerCase().includes(tag) || (t.desc||'').toLowerCase().includes(tag);
+      if(!has) pass=false;
+    }
+    const el = document.querySelector(`.task[data-id="${t.id}"]`);
+    if(el) el.style.display = pass ? '' : 'none';
+  });
+}
+function globalSearch(q){
+  const s = q.trim().toLowerCase();
+  if(!s){ $all('.task').forEach(e=> e.style.display=''); return; }
+  App.state.tasks.forEach(t=>{
+    const el = document.querySelector(`.task[data-id="${t.id}"]`);
+    const ok = t.title.toLowerCase().includes(s) || (t.desc||'').toLowerCase().includes(s) || (t.tags||[]).some(tt=>tt.toLowerCase().includes(s));
+    if(el) el.style.display = ok ? '' : 'none';
+  });
+}
+
+// ---------- Theme ----------
+function renderTheme(){
+  const theme = App.state.settings.theme || 'light';
+  document.body.setAttribute('data-theme', theme);
+  $('#toggleTheme').textContent = theme==='light' ? 'Escuro' : 'Claro';
+}
+function toggleTheme(){
+  App.state.settings.theme = (App.state.settings.theme === 'light') ? 'dark' : 'light';
+  saveState(true);
+}
+
+// ---------- Small helpers ----------
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+// ---------- Events wiring ----------
+document.addEventListener('DOMContentLoaded', ()=>{
+  // load
+  const loaded = loadState();
+  if(!loaded){
+    // initial demo
+    generateMock(6);
+    saveState(true);
+  } else {
+    // push current as initial undo snapshot
+    const snap = JSON.stringify({tasks:App.state.tasks, notes:App.state.notes, activity:App.state.activity, settings:App.state.settings});
+    pushUndoSnapshot(snap);
+  }
+
+  // create task
+  $('#addTaskBtn').onclick = ()=> {
+    const title = $('#taskTitle').value.trim();
+    if(!title) { alert('Insira um título'); return; }
+    const due = $('#taskDue').value ? new Date($('#taskDue').value).toISOString() : null;
+    const priority = $('#taskPriority').value;
+    createTask({title, desc:'', priority, due, tags:[]});
+    $('#taskTitle').value = '';
+    $('#taskDue').value = '';
+  };
+  $('#taskTitle').addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){ $('#addTaskBtn').click(); }
+  });
+
+  // view switch
+  $('#viewMode').onchange = (e)=>{
+    $all('#canvasArea > div').forEach(d=> d.classList.add('hidden'));
+    const mode = e.target.value;
+    if(mode==='kanban') $('#kanbanView').classList.remove('hidden');
+    if(mode==='list') $('#listView').classList.remove('hidden');
+    if(mode==='notes') $('#notesView').classList.remove('hidden');
+    if(mode==='calendar') $('#calendarView').classList.remove('hidden');
+    if(mode==='stats') $('#statsView').classList.remove('hidden');
+  };
+
+  // new note
+  $('#newNoteBtn').onclick = ()=> {
+    const t = prompt('Título da nota'); if(t===null) return;
+    const c = prompt('Conteúdo da nota'); if(c===null) return;
+    createNote({title:t, content:c});
+  };
+
+  // import/export/reset
+  $('#importBtn').onclick = ()=> importFromJSON($('#importArea').value);
+  $('#exportBtn').onclick = ()=> exportToJSON();
+  $('#resetBtn').onclick = ()=> resetState();
+
+  // mock gen
+  $('#mockSmall').onclick = ()=> { generateMock(5); saveState(true); };
+  $('#mockBig').onclick = ()=> { generateMock(50); saveState(true); };
+
+  // filters
+  $('#applyFilters').onclick = applyFilters;
+  $('#tagSearchBtn').onclick = ()=> {
+    const q = $('#quickTag').value.trim();
+    if(!q) return alert('Digite uma tag');
+    $('#globalSearch').value = q;
+    globalSearch(q);
+  };
+
+  // search
+  $('#globalSearch').addEventListener('input', (e)=> globalSearch(e.target.value));
+  $('#clearSearch').onclick = ()=> { $('#globalSearch').value=''; globalSearch(''); };
+
+  // sorts
+  $('#sortOld').onclick = ()=> renderList('created_asc');
+  $('#sortNew').onclick = ()=> renderList('created_desc');
+  $('#sortDue').onclick = ()=> renderList('due');
+
+  // undo/redo
+  $('#undoBtn').onclick = ()=> undo();
+  $('#redoBtn').onclick = ()=> redo();
+
+  // theme
+  $('#toggleTheme').onclick = ()=> toggleTheme();
+
+  // export via keyboard
+  document.addEventListener('keydown', (e)=>{
+    if(e.ctrlKey && e.key.toLowerCase()==='n'){ e.preventDefault(); $('#newNoteBtn').click(); }
+    if(e.ctrlKey && e.key.toLowerCase()==='k'){ e.preventDefault(); $('#viewMode').value='kanban'; $('#viewMode').dispatchEvent(new Event('change')); }
+    if(e.ctrlKey && e.key.toLowerCase()==='z'){ e.preventDefault(); undo(); }
+    if(e.ctrlKey && e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); }
+  });
+
+  // drag handlers were added in render
+  renderAll();
+});
+
+// ---------- Misc/edge: simple autosave every 20s ----------
+setInterval(()=> {
+  try{ saveState(false); }catch(e){}
+}, 20000);
+
+</script>
+</body>
+</html>
