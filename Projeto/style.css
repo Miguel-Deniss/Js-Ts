@@ -10,7 +10,7 @@ header {
     font-weight: 600;
   }
   .btn {
-    background-color: #f1f1f1;
+    background-color: rgb(224, 215, 215);
     border: 1px solid #000;
     cursor: pointer;
     font-size: 20px;
@@ -20,12 +20,18 @@ header {
     width: 120px;
     height: 30px;
     margin: 10px;
-
+   
     .btn:hover {
-      background-color: gray;
+      background-color: rgb(164, 164, 235);
     }
     
   }
 
+}
+
+footer {
+  p {
+    text-align: center;
+  }
 }
 
