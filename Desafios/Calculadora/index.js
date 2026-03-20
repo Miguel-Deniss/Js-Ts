@@ -12,4 +12,4 @@ const subt = num1 - num2;
 const mult = num1 * num2;
 const div = num1 / num2;
 
-console.log() // Escolher qual operador quer usar
+console.log(soma, subt, mult, div) // Escolher qual operador quer usar
