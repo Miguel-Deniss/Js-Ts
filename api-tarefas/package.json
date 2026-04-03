@@ -1,0 +1,9 @@
+{
+  "name": "api-tarefas",
+  "version": "1.0.0",
+  "description": "API simples de tarefas com Node.js puro",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
